@@ -29,7 +29,14 @@
 // SSD1306 LCD height in pixels
 #define SSD1306_HEIGHT          64
 
+#define CNTRL_BYTE_SEND_COMMAND ((uint8_t)0x80) /* 0b10(000000) Co bit 1 means command, d/c bit 0 means command (six nulls)    */
 
+#define CNTRL_BYTE_SEND_DATA ((uint8_t)0x40) /* 0b01(000000) Co bit 0 means only data, d/c bit 1 means data (six nulls)    */
+
+#define INCLUDE 0
+
+/* size of the font data structure, there is no struct or class... */
+#define U8G_FONT_DATA_STRUCT_SIZE 17
 //
 //  Enumeration for screen colors
 //
@@ -37,6 +44,19 @@ typedef enum {
 	Black = 0x00, // Black color, no pixel
 	White = 0x01  //Pixel is set. Color depends on LCD
 } SSD1306_COLOR;
+
+typedef enum {
+	horizontalAddMod = 0x00,
+	verticalAddMod = 0x01,
+	pageAddMod = 0x10,
+} UserAddressingMode;
+
+typedef enum {
+	commandColAddress = 0x21,
+	commandPageAddress = 0x22,
+
+} UserSetColOrPageStartEndAdd;
+
 
 //
 //  Struct to store transformations
@@ -48,6 +68,47 @@ typedef struct {
 	uint8_t Initialized;
 } SSD1306_t;
 
+typedef struct _current_font_settings_tag
+{
+	uint8_t width;
+  uint8_t height;
+
+  const uint8_t *font;      //regular font for all text procedures
+/*  u8g_dev_t *dev;                first device in the device chain
+
+  const u8g_pgm_uint8_t *cursor_font;   special font for cursor procedures
+  uint8_t cursor_fg_color, cursor_bg_color;
+  uint8_t cursor_encoding;
+  uint8_t mode;                          display mode, one of U8G_MODE_xxx
+  u8g_uint_t cursor_x;
+  u8g_uint_t cursor_y;
+  u8g_draw_cursor_fn cursor_fn;*/
+
+  int8_t glyph_dx;
+  int8_t glyph_x;
+  int8_t glyph_y;
+  uint8_t glyph_width;
+  uint8_t glyph_height;
+
+/*  u8g_font_calc_vref_fnptr font_calc_vref;
+  uint8_t font_height_mode;
+  int8_t font_ref_ascent;
+  int8_t font_ref_descent;
+  uint8_t font_line_spacing_factor;      line_spacing = factor * (ascent - descent) / 64
+  uint8_t line_spacing;
+
+  u8g_dev_arg_pixel_t arg_pixel;
+   uint8_t color_index;
+
+#ifdef U8G_WITH_PINLIST
+  uint8_t pin_list[U8G_PIN_LIST_LEN];
+#endif
+
+  u8g_state_cb state_cb;
+
+  u8g_box_t current_page;		 current box of the visible page */
+
+} cfs_al;
 //	Definition of the i2c port in main
 extern I2C_HandleTypeDef SSD1306_I2C_PORT;
 
@@ -61,5 +122,22 @@ void ssd1306_DrawPixel(uint8_t x, uint8_t y, SSD1306_COLOR color);
 char ssd1306_WriteChar(char ch, FontDef Font, SSD1306_COLOR color);
 char ssd1306_WriteString(char* str, FontDef Font, SSD1306_COLOR color);
 void ssd1306_SetCursor(uint8_t x, uint8_t y);
+static void ssd1306_WriteData(uint8_t *buffer, uint16_t length);
+static void ssd1306_WriteCommand(uint8_t command);
+char ssd1306_WriteGlyph(char ch,uint8_t *buffer,uint8_t bufferSize,uint8_t wglyph,uint8_t hglyph);
 
+
+
+static void u8g_CopyGlyphDataToCache( cfs_al *u8g, const uint8_t *g);
+static uint8_t u8g_font_GetFormat(const uint8_t *font);
+static uint8_t u8g_font_get_byte(const uint8_t *font, uint8_t offset);
+static uint8_t u8g_font_GetFontGlyphStructureSize(const uint8_t *font);
+int8_t u8g_draw_glyph(cfs_al *u8g, uint8_t x, uint8_t y, uint8_t encoding);
+void * u8g_GetGlyph(cfs_al *u8g, uint8_t requested_encoding);
+uint8_t u8g_font_GetFontEndEncoding(const void *font);
+uint8_t u8g_font_GetFontStartEncoding(const void *font);
+static uint8_t *u8g_font_GetGlyphDataStart(const void *font, void * g);
+static uint16_t u8g_font_GetEncoding97Pos(const void *font);
+static uint16_t u8g_font_GetEncoding65Pos(const void *font);
+static void u8g_FillEmptyGlyphCache(cfs_al *u8g);
 #endif
